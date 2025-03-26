@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% block paso %}
+    <button id="imputationButton" title="Mostrar mensaje">8. Resultados despues de aplicar los Modelos en el Dataset </button>
+{% endblock %}
+
+{% block title %}Resultados de los Modelos{% endblock %}
+{% block estilos %}
+    .btn-descargar,  .btn-ver-estad {
+      background-color: #007bff; /* Azul brillante */
+      color: #fff; /* Texto blanco */
+      border: none;
+      padding: 2px 12px;
+      font-size: 16px;
+      border-radius: 50px; /* Bordes redondeados */
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+      transition: all 0.3s ease;
+    }
+
+    .btn-descargar:hover, .btn-ver-estad:hover{
+      background-color: #0056b3; /* Azul más oscuro al pasar el mouse */
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2); /* Sombra más fuerte */
+      transform: translateY(-2px); /* Efecto de elevar el botón */
+    }
+
+    .btn-descargar:active, .btn-ver-estad:active {
+      background-color: #00408d; /* Azul aún más oscuro al hacer clic */
+      transform: translateY(1px); /* Efecto de presionar el botón */
+    }
+
+    /* Estilo del ícono */
+    .fa-download, .fa-eye, .bi-graph-up{
+      font-size: 18px; /* Tamaño del ícono */
+    }
+    .acciones{
+        display: flex; flex-direction: row; align-items: center; gap: 5px;
+    }
+{% endblock %}    
+{% block content %}
+    <div class="mt-5 container">
+        <h2 class="p-2 text-center">Resultados aplicando los Modelos KNN y XGBoost</h2>
+
+        <p class="text-justify">
+            Después de evaluar los modelos XGBoost y KNN utilizando los métodos de balanceo <strong><em>(SMOTE, Borderline-SMOTE, SMOTENC y Random Undersampling)</em></strong>, 
+            se aplicaron diversas métricas de evaluación, tales como <strong>Accuracy, F1-score, Sensibilidad, MCC, AUC, G-Mean y Balanced Accuracy</strong>. Se dio prioridad a 
+            la métrica de Balanced Accuracy para la selección del mejor modelo.
+        </p>
+        <p class="text-justify">
+            Es importante destacar que se eligió el <strong>balanced_accuracy_score </strong>como métrica principal debido a que evalúa el desempeño del modelo en cada clase, 
+            garantizando que no esté sesgado hacia la clase mayoritaria. Al promediar la <strong>sensibilidad</strong> de cada clase, esta métrica ofrece una evaluación más 
+            equilibrada, lo cual es esencial cuando se busca un rendimiento óptimo tanto en las clases mayoritarias como minoritarias. Por lo tanto, se 
+            considera una métrica más confiable que las demás.
+        </p>
+        <p class="text-justify">
+            A continuación, se presenta una tabla que detalla el modelo utilizado, el método aplicado, las métricas empleadas, así como las acciones disponibles, como la 
+            visualización de la curva ROC y la descarga del dataset después de aplicar los modelos.
+        
+        </p>
+        
+        <div class="table-responsive w-75 mx-auto">
+            <table class="table table-hover table-bordered text-center align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center" style="width: 10%;">Modelo</th>
+                        <th class="text-center" style="width: 24%;">Metodo</th>
+                        <th class="text-center" style="width: 15%;">Metricas</th>
+                        <th class="text-center" colspan="2" style="width: 15%;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr> 
+                        <td>XGBoost</td>
+                        <td style="{% if 'XGBoost-Smote' in mensajes %}background-color: #369136; color: white;{% endif %}">Smote</td>
+                        <td>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarGrafica" onclick="cargarEstadisticas('Smote','xgboost')">
+                                <i class="bi bi-graph-up"></i> Estadistica
+                            </button>
+                        </td>
+                        <td class="acciones">
+                                <!-- Botón de Descargar -->
+                                <form action="{{ url_for('descargarModelo', filename='SMOTE_XGBoost') }}" method="get">
+                                    <button type="submit" class="btn-descargar">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </button>
+                                </form>
+
+                                <!-- Botón de Curva ROC -->
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="graficaModalLabel" data-bs-target="#graficaModalLabel" onclick="cargarCurva('Smote','XGBoost')"
+                                {% if resultados[nombresplit ~'_SMOTE']['XGBoost']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC
+                                </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>XGBoost</td>
+                        <td style="{% if 'XGBoost-Smote Borderline' in mensajes %}background-color: #369136; color: white;{% endif %}">Smote Borderline</td>
+                        <td>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarGrafica" onclick="cargarEstadisticas('Smote-Borderline','xgboost')">
+                                <i class="bi bi-graph-up"></i> Estadistica
+                            </button>
+                        </td>
+                        <td class="acciones">
+                            <form action="{{ url_for('descargarModelo', filename='Borderline_XGBoost') }}" method="get">
+                                    <button type="submit" class="btn-descargar">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </button>
+                            </form>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="graficaModalLabel" data-bs-target="#graficaModalLabel" onclick="cargarCurva('Smote-Borderline','XGBoost')"
+                                {% if resultados[nombresplit ~'_Borderline']['XGBoost']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>XGBoost</td>
+                        <td style="{% if 'XGBoost-SmoteNC' in mensajes %}background-color: #369136; color: white;{% endif %}">SmoteNC</td>
+                        <td>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarGrafica" onclick="cargarEstadisticas('SmoteNC','xgboost')">
+                                <i class="bi bi-graph-up"></i> Estadistica
+                            </button>
+                        </td>
+                        <td class="acciones">
+                            <form action="{{ url_for('descargarModelo', filename='NC_XGBoost') }}" method="get">
+                                    <button type="submit" class="btn-descargar">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </button>
+                            </form>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="graficaModalLabel" data-bs-target="#graficaModalLabel" onclick="cargarCurva('SmoteNC','XGBoost')"
+                                {% if resultados[nombresplit ~'_NC']['XGBoost']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>XGBoost</td>
+                        <td style="{% if 'XGBoost-Random Under-Sampling' in mensajes %}background-color: #369136; color: white;{% endif %}">Random under-sampling</td>
+                        <td>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarGrafica" onclick="cargarEstadisticas('Random under-sampling','xgboost')">
+                                <i class="bi bi-graph-up"></i> Estadistica
+                            </button>
+                        </td>
+                        <td class="acciones">
+                            <form action="{{ url_for('descargarModelo', filename='RandomUnder_XGBoost') }}" method="get">
+                                    <button type="submit" class="btn-descargar">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </button>
+                            </form>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="graficaModalLabel" data-bs-target="#graficaModalLabel" onclick="cargarCurva('Random under-sampling','XGBoost')"
+                                {% if resultados[nombresplit ~'_RandomUnder']['XGBoost']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>KNN</td>
+                        <td style="{% if 'KNN-Smote' in mensajes %}background-color: #369136; color: white;{% endif %}">Smote</td>
+                        <td>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarGrafica" onclick="cargarEstadisticas('Smote','KNN')">
+                                <i class="bi bi-graph-up"></i> Estadistica
+                            </button>
+                        </td>
+                        <td class="acciones">
+                            <form action="{{ url_for('descargarModelo', filename='SMOTE_KNN') }}" method="get">
+                                    <button type="submit" class="btn-descargar">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </button>
+                            </form>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="graficaModalLabel" data-bs-target="#graficaModalLabel" onclick="cargarCurva('Smote','KNN')"
+                                {% if resultados[nombresplit ~'_SMOTE']['KNN']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>KNN</td>
+                        <td style="{% if 'KNN-Smote Borderline' in mensajes %}background-color: #369136; color: white;{% endif %}">Smote Borderline</td>
+                        <td>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarGrafica" onclick="cargarEstadisticas('Smote-Borderline','KNN')">
+                                <i class="bi bi-graph-up"></i> Estadistica
+                            </button>
+                        </td>
+                        <td class="acciones">
+                            <form action="{{ url_for('descargarModelo', filename='Borderline_KNN') }}" method="get">
+                                    <button type="submit" class="btn-descargar">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </button>
+                            </form>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="graficaModalLabel" data-bs-target="#graficaModalLabel" onclick="cargarCurva('Smote-Borderline','KNN')"
+                                {% if resultados[nombresplit ~'_Borderline']['KNN']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>KNN</td>
+                        <td style="{% if 'KNN-SmoteNC' in mensajes %}background-color: #369136; color: white;{% endif %}">SmoteNC</td>
+                        <td>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarGrafica" onclick="cargarEstadisticas('SmoteNC','KNN')">
+                                <i class="bi bi-graph-up"></i> Estadistica
+                            </button>
+                        </td>
+                        <td class="acciones">
+                            <form action="{{ url_for('descargarModelo', filename='NC_KNN') }}" method="get">
+                                    <button type="submit" class="btn-descargar">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </button>
+                            </form>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="graficaModalLabel" data-bs-target="#graficaModalLabel" onclick="cargarCurva('SmoteNC','KNN')"
+                                {% if resultados[nombresplit ~'_NC']['KNN']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>KNN</td>
+                        <td style="{% if 'KNN-Random Under-Sampling' in mensajes %}background-color: #369136; color: white;{% endif %}">Random under-sampling</td>
+                        <td>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarModalEsta" onclick="cargarEstadisticas('Random under-sampling','KNN')"
+                            >
+                                <i class="bi bi-graph-up"></i> Estadistica
+                            </button>
+                        </td>
+                        <td class="acciones">
+                            <form action="{{ url_for('descargarModelo', filename='RandomUnder_KNN') }}" method="get">
+                                    <button type="submit" class="btn-descargar">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </button>
+                            </form>
+                            <button type="button" class="btn-ver-estad" onclick="cargarCurva('Random under-sampling','KNN')"
+                                {% if resultados[nombresplit ~'_RandomUnder']['KNN']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="text-justify">
+                Despues de analizar los anteriores modelos se evidencia que el mejor es o son: 
+                {% for mensaje in ganador %}
+                    <strong style="color: green;">{{ mensaje }}</strong>
+                    {% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+        </div>
+
+        <!-- Botones -->
+        <div class="mt-4 d-flex justify-content-center gap-3">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Volver al Inicio</a>
+        </div>
+
+        
+    </div>
+
+    <!-- Modal estadistica-->
+    <div class="modal fade" id="visualizarModalEsta" tabindex="-1" aria-labelledby="visualizarModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="visualizarModalLabel">Resultado de las Estadisticas</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6 id="titulo-estadisticas" class="text-primary"></h6>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-bordered">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>nombre</th>
+                                        <th>valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-datos1">
+                                    <!-- Datos dinámicos aquí -->
+                                </tbody>
+                            </table>
+                            <h6 class="text-primary"style="text-align: center;">Matriz de Confusión </h6>
+                            <table class="table table-striped table-bordered table-sm text-center mx-auto" style="width: 200px;">
+                                <tbody id="tabla-datos2">
+                                    
+                                </tbody>
+                             </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+    <!-- Modal para la gráfica -->
+    <div class="modal fade" id="graficaModalLabel" tabindex="-1" aria-labelledby="graficaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary" id="graficaModalLabel">Curva ROC</h5> 
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="curvaROC" class="d-block w-100 rounded shadow-lg" alt="Curva ROC">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function cargarEstadisticas(name,metodo) {
+            ('Random under-sampling','KNN')
+            $.ajax({
+                url: "/estadisticaModelo/" + metodo+"-"+name,
+                type: "GET",
+                success: function(data) {
+                    let tablaHTML = "";
+                    let tablaHTML2 = "";
+                    
+                    // Iterar sobre cada estadística de la lista
+                    Object.entries(data).forEach(([nombreMetrica, valor]) => {
+                    // Omitir "Matriz de Confusión"
+                    if (nombreMetrica !== "Matriz de Confusión") {
+                        let valorFormateado = (valor !== null && typeof valor === "number") ? valor.toFixed(5) : valor;
+                        
+                        tablaHTML += `<tr>
+                            <td>${nombreMetrica}</td>
+                            <td>${valorFormateado}</td>
+                        </tr>`;
+                    }else{
+                        tablaHTML2 += `<tr>
+                            <td>${valor[0][0]}</td>
+                            <td>${valor[0][1]}</td>
+                        </tr>
+                        <tr>
+                            <td>${valor[1][0]}</td>
+                            <td>${valor[1][1]}</td>
+                        </tr>`;
+                    }
+                });
+
+                    $("#tabla-datos1").html(tablaHTML);
+                    $("#tabla-datos2").html(tablaHTML2);
+                    $("#titulo-estadisticas").text("Resultados para "+metodo+" en el dataset balanceado con "+metodo+" "+name);
+
+                    // Mostrar el modal
+                    $("#visualizarModalEsta").modal("show");
+                },
+                error: function() {
+                    alert("Error al cargar las estadísticas.");
+                }
+            });
+        }
+    </script>
+
+    <script>
+        function cargarCurva(name,metodo) {
+            $.ajax({
+                url: "/cargarCurva/" + name+"/"+metodo,  
+                type: "GET",
+                success: function(response) {
+                    let imgSrc = "data:image/png;base64," + response;
+                    $("#curvaROC").attr("src", imgSrc);
+                    $("#graficaModalLabel").modal("show");  // Mostrar el modal
+                },
+                error: function() {
+                    alert("Error al cargar la imagen.");
+                }
+            });
+        }
+    </script>
+
+{% endblock %}

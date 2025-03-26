@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block paso %}
+    {% if archivo_subido %}
+        <button id="imputationButton" title="Mostrar mensaje"> Selección de la variable objetivo</button>
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <p class="text-center p-2">Bienvenidos al framework, aquí va más texto.</p>
+
+    <!-- Formulario para subir archivo CSV -->
+    
+        <form action="/" method="POST" enctype="multipart/form-data" class="mb-4">
+            <div class="d-flex justify-content-center align-items-center gap-3">
+                <!-- Etiqueta -->
+                
+            {% if archivo_subido %}
+                <label for="csv_file" class="form-label mb-0 fw-bold">Archivo subido:</label>
+                <!-- Input de archivo -->
+                <input type="text" disabled class="form-control" value="{{ nombre_archivo }}" name="csv_file" id="csv_file" accept=".csv" style="width: 50%;">
+                <!-- Botón -->
+                <button type="submit" disabled class="btn btn-primary">Subir</button>
+            {% else %}
+                <label for="csv_file" class="form-label mb-0 fw-bold">Sube tu archivo CSV:</label>
+                <input type="file" class="form-control" name="csv_file" id="csv_file" accept=".csv" style="width: 50%;">
+                <button type="submit" class="btn btn-primary">Subir</button>
+            {% endif %}
+            </div>
+        </form>
+    
+    <!-- Modal para seleccionar columnas -->
+    {% if archivo_subido %}
+        <p class="text-center p-2">Ahora necesitamos seleccionar la variable objetivo con el fin de realizar un analisis de la importancia de
+        las columnas...</p>
+        {% include 'modal.html' %}
+    {% endif %}
+{% endblock %}

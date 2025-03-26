@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block paso %}
+    <button id="imputationButton" title="Mostrar mensaje">7. Nivel de desequilibrio del dataset despues de aplicar balanceo de datos </button>
+{% endblock %}
+{% block title %}Resultados Balanceo{% endblock %}
+
+{% block content %}
+    <div class="mt-5 container">
+        <h2 class="p-2 text-center">Resultado del balanceo de Datos del Dataset</h2>
+
+        <p class="text-justify">
+            Después de realizar el balanceo del dataset utilizando los métodos previamente mencionados 
+            <strong>(SMOTE, Borderline-SMOTE, SMOTENC y Random Undersampling)</strong>, se aplicaron las métricas del MIR y LRID.
+        </p>
+        <p class="text-justify">
+        A continuación, se presenta una tabla que muestra el método utilizado, el valor del MIR, el LRID y el nivel de desequilibrio
+        del dataset tras el balanceo de los datos. 
+        
+        </p>
+        
+        <div class="table-responsive w-75 mx-auto">
+            <table class="table table-hover table-bordered text-center align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center" style="width: 30%;">Metodo</th>
+                        <th class="text-center" style="width: 15%;">MIR</th>
+                        <th class="text-center" style="width: 15%;">LRID</th>
+                        <th class="text-center" style="width: 15%;">Desequilibrio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resultado in resultados %}
+                        <tr> 
+                            <td><strong>{{ resultado[0] }}</strong></td>  <!-- Nombre del método -->
+                            <td>{{ '%.6f' | format(resultado[1]) }}</td>  <!-- MIR -->
+                            <td>{{ '%.6f' | format(resultado[2]) }}</td>  <!-- LRID -->
+                            
+                            {% if resultado[3] == 'Alto' %}
+                                <td><strong style="color: red;">{{ resultado[3] }}</strong></td>
+                            {% elif resultado[3] == 'Medio' %}
+                                <td><strong style="color: coral;">{{ resultado[3] }}</strong></td>
+                            {% else %}
+                                <td><strong style="color: green;">{{ resultado[3] }}</strong></td>    
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        
+        </div>
+
+        <!-- Botones -->
+        <div class="mt-4 d-flex justify-content-center gap-3">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
+            <a href="{{ url_for('Modelo') }}" class="btn btn-primary">Evaluar modelos</a>
+        </div>
+
+        
+    </div>
+
+{% endblock %}

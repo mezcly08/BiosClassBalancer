@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block paso %}
+    <button id="imputationButton" title="Mostrar mensaje">4. Valores vacíos del Dataset</button>
+{% endblock %}
+{% block title %}Nivel de valores vacios{% endblock %}
+
+{% block content %}
+    <div class="mt-5 container">
+        <h2 class="p-2 text-center">Medición de valores vacíos del dataset</h2>
+        
+        <p class="text-justify">
+            Después de realizar el tratamiento de los valores atípicos en el conjunto de datos, estos se clasificarán en tres niveles:
+        </p>
+        <ul class="text-justify">
+            <li><strong>Nivel bajo:</strong> Si el porcentaje de valores nulos es menor al 5%.</li>
+            <li><strong>Nivel medio:</strong> Si el porcentaje de valores nulos es menor o igual al 40%.</li>
+            <li><strong>Nivel alto:</strong> Si el porcentaje de valores nulos supera el 41%.</li>
+        </ul>
+        <p class="text-justify">
+            El nivel global del dataset es: <strong>{{ nivel_global }}</strong>, 
+            Porcentaje total de valores nulos: <strong>{{ porcentaje_total_nulos | round(4)}}%.</strong><br>
+            A continuación, verás las columnas con el porcentaje analizado.
+        </p>
+
+        <div class="table-responsive w-75 mx-auto">
+            <table class="table table-hover table-bordered text-center align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Columna</th>
+                        <th>Porcentaje Nulos</th>
+                        <th>Nivel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in resultado_valores_vacios %}
+                        <tr>
+                            <td>{{ fila.Columna }}</td>
+                            <td>{{ fila.Porcentaje_Nulos | default(0) | round(6) }}%</td>
+                            <td>{{ fila.Nivel }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-center mt-3">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary me-3">Cancelar</a>
+
+            <form id="imputacionForm" action="{{ url_for('imputacion') }}" method="POST">
+                <button type="submit" class="btn btn-primary">Realizar Imputación</button>
+            </form>
+        </div>
+
+    </div>
+{% endblock %}
+
+

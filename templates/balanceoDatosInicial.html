@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block paso %}
+    <button id="imputationButton" title="Mostrar mensaje">6.  Nivel de desequilibrio del dataset antes de aplicar balanceo de datos</button>
+{% endblock %}
+{% block title %}Balanceo de Datos del Modelo{% endblock %}
+
+{% block content %}
+    <div class="mt-5 container">
+        <h2 class="p-2 text-center">Balanceo de Datos del Dataset</h2>
+
+        <p class="text-justify">
+            Tras analizar los resultados de la imputación utilizando diversos métodos, se llegó a la conclusión de que 
+            el conjunto de datos mejor imputado es <strong><em>{{ nombre }}</em></strong>, ya que presentó una calidad de datos superior en comparación 
+            con los demás métodos.
+        </p>
+        <p class="text-justify">
+        A continuación, procederemos a calcular el desbalance del conjunto de datos seleccionado como el mejor. Para ello, 
+        utilizamos dos métricas: 
+        <ul class="text-justify">
+            <li><strong>MIR(Índice de Desequilibrio General):</strong> que mide el nivel de desequilibrio en un conjunto de datos, calculándose como la razón entre la mayor y la menor cantidad de instancias por clase.</li>
+            <li><strong>LRID (Likelihood Ratio Imbalance Degree):</strong> que evalúa el grado de desequilibrio en un conjunto de datos de clasificación multiclase. A diferencia del MIR, el LRID no solo considera la diferencia en el número de instancias entre las clases, sino también su impacto en la probabilidad de clasificación correcta.</li>
+        </ul>
+        
+        </p>
+        <p class="text-justify" style="margin-bottom: 0;">
+            <strong>Interpretación:</strong> Para este framework se recomienda usar el MIR ya que esta relacionado con el NIVEL de desequilibrio.
+            <br>
+            <strong style="margin-left:2%;">MIR:</strong> 
+            <li style="margin-left:5%">MIR <= 1.5: El conjunto de datos tiene un desequilibrio <strong style="color: green;">Bajo</strong>.</li>
+            <li style="margin-left:5%">MIR <= 3: El conjunto de datos tiene un desequilibrio <strong style="color: coral;">Medio</strong>.</li>
+            <li style="margin-left:5%">MIR > 3: El conjunto de datos tiene un desequilibrio <strong style="color: red;">Alto</strong>.</li>
+        </p>
+        <div class="table-responsive w-75 mx-auto">
+            <table class="table table-hover table-bordered text-center align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center" style="width: 30%;">Dataset</th>
+                        <th class="text-center" style="width: 15%;">MIR</th>
+                        <th class="text-center" style="width: 15%;">LRID</th>
+                        <th class="text-center" style="width: 15%;">Desequilibrio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                   <tr> 
+                        <td>{{ nombre }}</td>
+                        <td>{{ '%.6f' | format(mir) }}</td>
+                        <td>{{ '%.6f' | format(lrid) }}</td>
+                        {% if nivel == 'Alto' %}
+                            <td><strong style="color: red;">{{ nivel }}</strong></td>
+                        {% elif nivel == 'Medio' %}
+                            <td><strong style="color: coral;">{{ nivel }}</strong></td>
+                        {% else %}
+                            <td><strong style="color: green;">{{ nivel }}</strong></td>    
+                        {% endif %}
+                    </tr>
+                </tbody>
+            </table>
+        
+        </div>
+        <p class="text-justify">
+            Después de analizar el nivel de desequilibrio en el conjunto de datos seleccionado, se aplicarán técnicas
+            de balanceo para mejorar la distribución de clases. Los métodos utilizados serán: <strong>SMOTE, Borderline-SMOTE,
+            SMOTENC</strong> y <strong>Random Undersampling.</strong>
+        </p>
+
+        <!-- Botones -->
+        <div class="mt-4 d-flex justify-content-center gap-3">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
+            <a href="{{ url_for('Balanceo') }}" class="btn btn-primary">Realizar Balanceo de Datos</a>
+        </div>
+
+        <!-- Modal para la gráfica -->
+        <div class="modal fade" id="graficaModal" tabindex="-1" aria-labelledby="graficaModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="graficaModalLabel">Importancia de las Variables</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="data:image/png;base64,{{ plot_b64 }}" alt="Gráfico de Importancia" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,47 @@
+# Entornos virtuales
+venv/
+env/
+ENV/
+*.pyc
+__pycache__/
+instance/
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+.eggs/
+
+# Archivos de configuración local
+*.env
+.env.*
+*.sqlite3
+*.db
+*.log
+
+# PyCharm / VSCode
+.idea/
+.vscode/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de pruebas
+coverage/
+htmlcov/
+*.cover
+*.py,cover
+
+# Docker
+*.pid
+
+# Flask-Migrate
+migrations/
+
+# Test reports
+junit-*.xml
+
+# Build
+build/
+dist/
+*.egg

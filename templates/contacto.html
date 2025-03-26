@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Contacto{% endblock %}
+{% block estilos %}
+    p{
+        margin-bottom: 4px;
+    }
+    .foto-funcionario {
+            width: 200px; /* Ajusta el tamaño de la foto */
+            height: 200px; /* Ajusta el tamaño de la foto */
+            border-radius: 50%; /* Hace la imagen circular */
+            object-fit: cover; /* Asegura que la imagen se recorte bien si es más grande */
+            margin-bottom: 15px; /* Espacio entre la foto y el nombre */
+        }
+{% endblock %}
+
+
+{% block content %}
+    <div class="mt-5 container">
+    <h3 style="text-align: center;margin-bottom: 40px;">Desarrollador por:</h3><br><br>
+        <div class="row text-center">
+        
+                <div class="col-md-4">
+                    <img src="{{ url_for('static', filename='images/camilo.jpg') }}" class="foto-funcionario" alt="Camilo">
+                    <p><strong>Cristian Camilo Perafan Erazo</strong></p>
+                    <p>Correo: <a href="mailto:cperafane@unicauca.edu.co">cperafane@unicauca.edu.co</a></p>
+                    <p>Tesista</p>
+                </div>
+                <div class="col-md-4">
+                
+                    <img src="{{ url_for('static', filename='images/DSC_0048.jpg') }}" class="foto-funcionario" alt="Carlos">
+                    <p><strong>Carlos Enrique Hoyos Joiro</strong></p>
+                    <p>Correo: <a href="mailto:joiroce@unicauca.edu.co">joiroce@unicauca.edu.co</a></p>
+                    <p>Tesista</p>
+                </div>
+                <div class="col-md-4">
+                <img src="{{ url_for('static', filename='images/mariaIsabel.jpg') }}" class="foto-funcionario" alt="Maria Isabel">
+                    <p><strong>Maria Isabel Vidal Caicedo</strong></p>
+                    <p>Correo: <a href="mailto:mariaividal@unicauca.edu.co">mariaividal@unicauca.edu.co</a></p>
+                    <p>Directora</p>
+                </div>
+            </div>
+    </div>
+{% endblock %}

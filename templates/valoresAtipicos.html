@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block paso %}
+    <button id="imputationButton" title="Mostrar mensaje">3. Identificacion de valores atipicos</button>
+{% endblock %}
+{% block title %}Valores Atípicos{% endblock %}
+
+{% block estilos%}
+    .carousel {
+        max-width: 800px;
+        margin: auto;
+    }
+    .carousel img {
+        max-height: 500px;
+        object-fit: contain;
+        background: #f8f9fa;
+    }
+    .carousel-control-prev-icon, .carousel-control-next-icon {
+        filter: invert(1);
+    }    
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2 class="text-center text-primary">Detección de Valores Atípicos</h2>
+        <p class="text-center text-muted">
+            A continuación, se muestran las distribuciones de los valores atípicos detectados en las variables continuas.
+        </p>
+
+        <!-- Carrusel -->
+        <div id="carruselAtipicos" class="carousel slide shadow-lg rounded" data-bs-ride="carousel">
+            
+            <!-- Indicadores -->
+            <div class="carousel-indicators">
+                {% for img in imagenes %}
+                    <button type="button" data-bs-target="#carruselAtipicos" data-bs-slide-to="{{ loop.index0 }}" 
+                            class="{% if loop.first %}active{% endif %}" aria-label="Slide {{ loop.index }}">
+                    </button>
+                {% endfor %}
+            </div>
+
+            <!-- Imágenes del Carrusel -->
+            <div class="carousel-inner rounded">
+                {% for img in imagenes %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        <img src="data:image/png;base64,{{ img }}" class="d-block w-100 rounded" alt="Gráfico de valores atípicos">
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Controles -->
+            <button class="carousel-control-prev" type="button" data-bs-target="#carruselAtipicos" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carruselAtipicos" data-bs-slide="next">
+                <span class="carousel-control-next-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Siguiente</span>
+            </button>
+        </div>
+    </div>
+    <p class="p-2 text-center">
+        El siguente paso es, seleccionar las variables que deseas procesar para gestionar los valores atípicos.
+    </p>
+    {% include 'modalAtipicos.html' %}
+{% endblock %}

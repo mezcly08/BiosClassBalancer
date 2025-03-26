@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block paso %}
+    <button id="imputationButton" title="Mostrar mensaje">0.Pre-procesamiento del dataset</button>
+{% endblock %}
+{% block title %}Resultados del Modelo{% endblock %}
+
+{% block content %}
+    <div class="mt-5 container">
+        <h2 class="p-2 text-center">Resultados del Análisis del Dataset</h2>
+
+        <p class="text-justify">
+            Tras analizar la importancia de las variables, hemos identificado algunas columnas que sugerimos eliminar. Esta recomendación es solo una guía.<br>
+            Puedes visualizar la gráfica de importancia de las variables para facilitar la interpretación y análisis de su relevancia en el modelo.
+            Esta visualización te ayudará a identificar qué variables tienen mayor impacto y cuáles podrían ser prescindibles. 
+            <a href="#" class="text-info fw-bold" data-bs-toggle="modal" data-bs-target="#graficaModal">Ver gráfica</a>.
+        </p>
+
+        <p class="text-justify">
+            A continuación, verás las columnas preseleccionadas para su eliminación. Si deseas excluir más variables, puedes seleccionarlas manualmente.
+        </p>
+
+        <form action="{{ url_for('guardar_variables') }}" method="POST">
+            <div class="table-responsive w-75 mx-auto">
+                <table class="table table-hover table-bordered text-center align-middle table-sm">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-center" style="width: 50%;">Variable</th>
+                            <th class="text-center" style="width: 25%;">Importancia</th>
+                            <th class="text-center" style="width: 10%;">Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feature, importance in feature_importances.items() %}
+                            <tr>
+                                <td class="text-start">{{ feature }}</td> <!-- Alinear a la izquierda para mejor legibilidad -->
+                                <td>{{ '%.6f' | format(importance) }}</td>
+                                <td>
+                                    <input type="checkbox" name="eliminar" value="{{ feature }}" 
+                                        {% if zero_importance_features and feature in zero_importance_features %} checked {% endif %}>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <input type="hidden" name="dependiente" value="{{ dependiente }}">
+
+            <!-- Botones -->
+            <div class="mt-4 d-flex justify-content-center gap-3">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Eliminar Columnas Seleccionadas</button>
+            </div>
+        </form>
+
+        <!-- Modal para la gráfica -->
+        <div class="modal fade" id="graficaModal" tabindex="-1" aria-labelledby="graficaModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="graficaModalLabel">Importancia de las Variables</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="data:image/png;base64,{{ plot_b64 }}" alt="Gráfico de Importancia" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block paso %}
+    <button id="imputationButton" title="Mostrar mensaje">1. Identificación de Variables(Categoricas y Continuas)</button>
+{% endblock %}
+{% block title %}Categorización de Variables{% endblock %}
+
+{% block estilos %}
+    .carousel-container {
+        max-width: 800px;
+        margin: auto;
+        margin-top: 50px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        border-radius: 15px;
+        overflow: hidden;
+        background: white;
+        padding: 15px;
+    }
+    .carousel-inner img {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+    }
+    .carousel-control-prev-icon, 
+    .carousel-control-next-icon {
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        padding: 10px;
+    }
+    .carousel-indicators [data-bs-target] {
+        background-color: #007bff;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+{% endblock %}
+
+{% block content %}
+<div class="mt-5 container">
+    <h2 class="p-2 text-center">Categorización de las Variables</h2>
+    <p class="text-justify">
+        Después de eliminar las variables seleccionadas, el sistema realizó un análisis para identificar las variables categóricas y continuas. 
+        <br>A continuación, puedes revisar los resultados de este análisis y, si detectas algún error, ajustar manualmente la categorización de las variables.
+    </p>
+
+    <!-- Formulario de Categorización -->
+        <div class="card-body">
+            <form method="POST" action="/valores_atipicos">
+                <div class="table-responsive w-75 mx-auto">
+                    <table class="table table-hover table-bordered text-center align-middle table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Variable</th>
+                                <th>Categorización</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for variable in columnas %}
+                            <tr>
+                                <td>{{ variable }}</td>
+                                <td>
+                                    <select class="form-select categoria-selector" name="categoria_{{ variable }}" data-variable="{{ variable }}">
+                                        <option value="categorica" {% if variable in variables_categoricas %}selected{% endif %}>Categórica</option>
+                                        <option value="continua" {% if variable in variables_continuas %}selected{% endif %}>Continua</option>
+                                    </select>
+                                    <!-- Inputs ocultos para enviar variables categorizadas -->
+                                    <input type="hidden" name="variables_categoricas" value="{{ variable }}" class="categoria-hidden" 
+                                           {% if variable not in variables_categoricas %}disabled{% endif %}>
+                                    <input type="hidden" name="variables_continuas" value="{{ variable }}" class="continua-hidden" 
+                                           {% if variable not in variables_continuas %}disabled{% endif %}>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="d-flex justify-content-center mt-3">
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary me-3">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar Categorización</button>
+                </div>
+            </form>
+        </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const selectElements = document.querySelectorAll(".categoria-selector");
+        
+        function actualizarValores() {
+            selectElements.forEach(select => {
+                let variable = select.getAttribute("data-variable");
+                let categoriaHidden = select.parentElement.querySelector(".categoria-hidden");
+                let continuaHidden = select.parentElement.querySelector(".continua-hidden");
+
+                if (select.value === "categorica") {
+                    categoriaHidden.disabled = false;
+                    continuaHidden.disabled = true;
+                } else {
+                    categoriaHidden.disabled = true;
+                    continuaHidden.disabled = false;
+                }
+            });
+        }
+
+        // Detectar cambios en los select y actualizar listas
+        selectElements.forEach(select => {
+            select.addEventListener("change", actualizarValores);
+        });
+
+        // Inicializar valores al cargar la página
+        actualizarValores();
+    });
+</script>
+
+{% endblock %}
