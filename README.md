@@ -3,7 +3,10 @@
 Este repositorio pretende ser un framework para el rebalanceo de datos biomédicos.
 
 ## Setup
-
+Primero debes Instalar virtualenv
+```bash
+pip install virtualenv
+```
 Crear por única vez un `virtualenv` usando Python 3.12.6:
 
 ```bash
