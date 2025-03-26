@@ -16,7 +16,7 @@ Para cada comando en adelante, es necesario previamente activar el virtualenv:
 Instalar las dependencias listadas en el archivo requirements.txt:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirement.txt
 ```
 Para ejecutar el framework deberá ejecutar.
 ```bash
