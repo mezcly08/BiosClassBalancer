@@ -25,3 +25,4 @@ Para ejecutar el framework deberá ejecutar.
 ```bash
 python main.py
 ```
+Desarrollado por Camilo Perafan - Carlos Hoyos - Maria Isabel Vidal
