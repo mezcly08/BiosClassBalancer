@@ -10,7 +10,7 @@ pip install virtualenv
 Crear por única vez un `virtualenv` usando Python 3.12.6:
 
 ```bash
-virtualenv venv
+python -m virtualenv venv
 ```
 Para cada comando en adelante, es necesario previamente activar el virtualenv:
 ```bash
