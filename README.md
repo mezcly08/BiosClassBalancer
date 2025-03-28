@@ -14,8 +14,9 @@ python -m virtualenv venv
 ```
 Para cada comando en adelante, es necesario previamente activar el virtualenv:
 ```bash
-. venv/bin/activate
+. venv/scripts/activate
 ```
+
 Instalar las dependencias listadas en el archivo requirements.txt:
 
 ```bash
