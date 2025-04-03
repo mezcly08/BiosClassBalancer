@@ -3,22 +3,27 @@
 Este repositorio pretende ser un framework para el rebalanceo de datos biomédicos.
 
 ## Setup
-
+Primero debes Instalar virtualenv
+```bash
+pip install virtualenv
+```
 Crear por única vez un `virtualenv` usando Python 3.12.6:
 
 ```bash
-virtualenv venv
+python -m virtualenv venv
 ```
 Para cada comando en adelante, es necesario previamente activar el virtualenv:
 ```bash
-. venv/bin/activate
+. venv/scripts/activate
 ```
+
 Instalar las dependencias listadas en el archivo requirements.txt:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirement.txt
 ```
 Para ejecutar el framework deberá ejecutar.
 ```bash
 python main.py
 ```
+Desarrollado por Camilo Perafan - Carlos Hoyos - Maria Isabel Vidal
