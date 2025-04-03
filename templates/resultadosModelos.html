@@ -63,7 +63,8 @@
                         <th class="text-center" style="width: 10%;">Modelo</th>
                         <th class="text-center" style="width: 24%;">Metodo</th>
                         <th class="text-center" style="width: 15%;">Metricas</th>
-                        <th class="text-center" colspan="2" style="width: 15%;">Acciones</th>
+                        <th class="text-center" colspan="1" style="width: 15%;">Acciones</th>
+                        <th class="text-center" style="width: 15%;">Metrica Original</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -90,6 +91,17 @@
                                 {% endif %}>
                                     <i class="bi bi-graph-up"></i> CurvaROC
                                 </button>
+                        </td>
+                        <td rowspan="4">
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarGrafica" onclick="cargarEstadisticas('base','xgboost')">
+                                <i class="bi bi-graph-up"></i> Estadistica Original
+                            </button><br><br>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="graficaModalLabel" data-bs-target="#graficaModalLabel" onclick="cargarCurva('base','XGBoost')"
+                                {% if resultados['base']['XGBoost']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC Original
+                            </button>
                         </td>
                     </tr>
                     <tr>
@@ -179,6 +191,17 @@
                                     <i class="bi bi-graph-up"></i> CurvaROC
                             </button>
                         </td>
+                         <td rowspan="4">
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="visualizarModalEsta" data-bs-target="#visualizarGrafica" onclick="cargarEstadisticas('base','KNN')">
+                                <i class="bi bi-graph-up"></i> Estadistica Original
+                            </button> <br><br>
+                            <button type="button" class="btn-ver-estad" data-bs-toggle="graficaModalLabel" data-bs-target="#graficaModalLabel" onclick="cargarCurva('base','KNN')"
+                                {% if resultados['base']['KNN']['AUC'] is none %}
+                                    disabled
+                                {% endif %}>
+                                    <i class="bi bi-graph-up"></i> CurvaROC Original
+                            </button>
+                        </td>
                     </tr>
                     <tr>
                         <td>KNN</td>
@@ -247,6 +270,7 @@
                             </button>
                         </td>
                     </tr>
+                    
                 </tbody>
             </table>
             <p class="text-justify">
@@ -320,7 +344,6 @@
 
     <script>
         function cargarEstadisticas(name,metodo) {
-            ('Random under-sampling','KNN')
             $.ajax({
                 url: "/estadisticaModelo/" + metodo+"-"+name,
                 type: "GET",

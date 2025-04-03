@@ -7,7 +7,7 @@ from model_trainer import ModelTrainer
 from Metodos.identificacion_variables import identificar_variables, revisar_codificacion_categoricas
 from Metodos.valores_atipicos import graficar_valores_atipicos, estandarizar_tipos, tratar_valores_atipicos, evaluar_valores_vacios
 from Metodos.imputacion import imputar_xgboost,imputar_random_forest, imputar_knn_regresion, imputar_knn, imputar_regresion, imputar_mediana, imputar_moda, imputar_categoricas_simple, imputar_categoricas_random_forest, graficar_distribuciones, evaluar_calidad_imputacion
-from Metodos.balanceo import apply_smote, apply_smote_borderline, apply_smote_nc, apply_random_under_sampling, oversampling, calculate_mir, calculate_lrid, medir_desbalance, balancear_datasets, entrenar_y_evaluar_modelos, imagenesModelo, seleccionar_mejor_modelo
+from Metodos.balanceo import apply_smote, apply_smote_borderline, apply_smote_nc, apply_random_under_sampling, calculate_mir, calculate_lrid, medir_desbalance, balancear_datasets, entrenar_y_evaluar_modelos, imagenesModelo, seleccionar_mejor_modelo
 
 
 app = Flask(__name__)
@@ -232,7 +232,6 @@ def imputacion():
     }
     resultados_imputacion, mejor_metodo = evaluar_calidad_imputacion(df, imputaciones, variables_continuas, dependiente)
     imagenes_base64 = graficar_distribuciones(df, df_xgboost, df_random_forest, df_knn, df_moda_mediana, variables_continuas) 
-    print(mejor_metodo)
     return render_template('imputacion.html', imagenes_base64= imagenes_base64, resultados_imputacion = resultados_imputacion, mejor_metodo=mejor_metodo)
 
 @app.route('/descargar/<filename>')
@@ -334,9 +333,7 @@ def indexBalanceo():
     global variables_continuas
     global nombreDataset
     global rutaGanador
-    #dependiente = "Dx:Cancer"
     directory = datasetGanador()
-    #directory = Imports.os.path.join(app.config['UPLOAD_FOLDER'], 'dataset_xgboost.csv')
     dt = Imports.pd.read_csv(directory)
     nombreDataset = Imports.os.path.splitext(Imports.os.path.basename(directory))[0]
     variables_categoricas, variables_continuas = identificar_variables(dt)
@@ -354,7 +351,6 @@ def Balanceo():
     global dependiente
     global rutaGanador
 
-    #directory = Imports.os.path.join(app.config['UPLOAD_FOLDER'], 'dataset_xgboost.csv')
     directory = datasetGanador()
     dt = Imports.pd.read_csv(directory)
     target = dependiente
@@ -382,13 +378,19 @@ def Modelo():
         nombresplit + "_Borderline": Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_smote_borderline.csv')),
         nombresplit + "_NC": Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_smote_nc.csv')),
         nombresplit + "_RandomUnder": Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_random_under.csv')),
+        "base": Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],'base_test.csv')),
     }
     
     for metodo, df in datasets_cargados.items():
         nombre = metodo.replace(nombresplit+"_", "")
         modelo[metodo] = entrenar_y_evaluar_modelos(df, target, nombre,app)
- 
-    mejor_metodo1, mejor_modelo, mejor_score, mensajes = seleccionar_mejor_modelo(modelo, nombresplit)
+    
+    modeloSinBase = modelo.copy()
+    del modeloSinBase['base']
+    #print(modelo)
+    #print("holaaa \n")
+    #print(modeloSinBase)
+    mejor_metodo1, mejor_modelo, mejor_score, mensajes = seleccionar_mejor_modelo(modeloSinBase, nombresplit)
     resultado = modelo.copy()
     return render_template('resultadosModelos.html', resultados = resultado, nombresplit=nombresplit, mensajes = mensajes, ganador= mensajes.copy())
 
@@ -434,6 +436,10 @@ def estadisticaModelo(name):
         respuesta = resultado[nombresplit+'_NC']['KNN']
     elif(name == 'KNN-Random under-sampling'):
         respuesta = resultado[nombresplit+'_RandomUnder']['KNN']
+    elif(name == 'xgboost-base'):
+        respuesta = resultado['base']['XGBoost']
+    elif(name == 'KNN-base'):
+        respuesta = resultado['base']['KNN']
 
     return respuesta    
 
@@ -460,8 +466,9 @@ def cargarCurva(name,metodo):
     elif(name == 'SmoteNC'):   
         respuesta = Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_smote_nc.csv'))
     elif(name == 'Random under-sampling'):
-        respuesta = Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_smote_nc.csv'))
-    
+        respuesta = Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_random_under.csv'))
+    elif(name == 'base'):
+        respuesta = Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],'base_test.csv'))
     return imagenesModelo(respuesta, target, metodo, name)
 
 

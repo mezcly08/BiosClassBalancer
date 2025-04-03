@@ -2,34 +2,36 @@ from imports import Imports
 import pandas as pd
 
 def apply_smote(X, y):
+    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.3, random_state=42)
     smote = Imports.SMOTE(random_state=42)
-    X_resampled, y_resampled = smote.fit_resample(X, y)
-    return X_resampled, y_resampled
+    X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+    return X_train_resampled, X_test, y_train_resampled, y_test
 
 def apply_smote_borderline(X, y):
+    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.3, random_state=42)
     smote_borderline = Imports.BorderlineSMOTE(random_state=42, kind='borderline-1')
-    X_resampled, y_resampled = smote_borderline.fit_resample(X, y)
-    return X_resampled, y_resampled
+    X_train_resampled, y_train_resampled = smote_borderline.fit_resample(X_train, y_train)
+    return X_train_resampled, X_test, y_train_resampled, y_test
 
-#Categorical_features recibe bool y toca convertirlos
 def apply_smote_nc(X, y, categorical_features):
+    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.3, random_state=42)
+
     # Convertimos categorical_features en lista de booleanos si aún no lo es
     if isinstance(categorical_features[0], bool):
         smote_nc = Imports.SMOTENC(categorical_features=categorical_features, random_state=42)
     else:
-        categorical_bool = [col in categorical_features for col in X.columns]
+        categorical_bool = [col in categorical_features for col in X_train.columns]
         smote_nc = Imports.SMOTENC(categorical_features=categorical_bool, random_state=42)
 
-    X_resampled, y_resampled = smote_nc.fit_resample(X, y)
-    return X_resampled, y_resampled
+    X_train_resampled, y_train_resampled = smote_nc.fit_resample(X_train, y_train)
+    return X_train_resampled, X_test, y_train_resampled, y_test
 
 def apply_random_under_sampling(X, y):
+    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.3, random_state=42)
     under_sampler = Imports.RandomUnderSampler(random_state=42)
-    X_resampled, y_resampled = under_sampler.fit_resample(X, y)
-    return X_resampled, y_resampled
-#TODO
-def oversampling():
-    pass
+    X_train_resampled, y_train_resampled = under_sampler.fit_resample(X_train, y_train)
+    return X_train_resampled, X_test, y_train_resampled, y_test
+
 
 #Evaluar el desbalance de datos
 def calculate_mir(n_i):
@@ -77,10 +79,10 @@ def balancear_datasets(dataset, target, variables_categoricas, variables_continu
     categorical_features_bool = [col in variables_categoricas for col in dataset.columns if col != target]
 
     balance_methods = {
-        "smote": lambda X, y: Imports.SMOTE().fit_resample(X, y),
-        "smote_borderline": lambda X, y: Imports.BorderlineSMOTE().fit_resample(X, y),
-        "smote_nc": lambda X, y: Imports.SMOTENC(categorical_features=categorical_features_bool).fit_resample(X, y),
-        "random_under": lambda X, y: Imports.RandomUnderSampler().fit_resample(X, y)
+        "smote": lambda X, y: apply_smote(X, y),
+        "smote_borderline": lambda X, y: apply_smote_borderline(X, y),
+        "smote_nc": lambda X, y: apply_smote_nc(X, y, categorical_features_bool),
+        "random_under": lambda X, y: apply_random_under_sampling(X, y)
     }
 
     results = []
@@ -90,12 +92,20 @@ def balancear_datasets(dataset, target, variables_categoricas, variables_continu
 
     for method_name, balance_func in balance_methods.items():
 
-        X_resampled, y_resampled = balance_func(X, y)
+        X_resampled, X_test, y_resampled, y_test = balance_func(X, y)
+
         df_balanced = Imports.pd.DataFrame(X_resampled, columns=X.columns)
         df_balanced[target] = y_resampled
+
+        # Reconstruimos el dataset de prueba (sin balancear)
+        df_test = Imports.pd.DataFrame(X_test, columns=X.columns)
+        df_test[target] = y_test
     
-        file_path = Imports.os.path.join(app.config['UPLOAD_FOLDER'], f"{name}_{method_name}.csv")
-        df_balanced.to_csv(file_path, index=False)
+        train_path = Imports.os.path.join(app.config['UPLOAD_FOLDER'], f"{name}_{method_name}.csv")
+        test_path = Imports.os.path.join(app.config['UPLOAD_FOLDER'], f"base_test.csv")
+
+        df_balanced.to_csv(train_path, index=False)
+        df_test.to_csv(test_path, index=False)
 
         mir, lrid, nivel = medir_desbalance(df_balanced, target)
 
@@ -121,8 +131,8 @@ def entrenar_y_evaluar_modelos(df, target, nombreMetodo,app):
     X = df.drop(columns=[target])
     y = df[target]
 
-    # Dividir en conjuntos de entrenamiento (80%) y prueba (20%)
-    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    # Dividir en conjuntos de entrenamiento (70%) y prueba (30%)
+    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
 
     # Definir los modelos
     modelos = {
@@ -177,7 +187,7 @@ def entrenar_y_evaluar_modelos(df, target, nombreMetodo,app):
             
     return resultados
     
-def imagenesModelo(df, target, metodo, nombre,):
+def imagenesModelo(df, target, metodo, nombre):
     """
     Entrena modelos de XGBoost y KNN en el dataset dado y calcula métricas de evaluación.
 
@@ -194,8 +204,8 @@ def imagenesModelo(df, target, metodo, nombre,):
     X = df.drop(columns=[target])
     y = df[target]
 
-    # Dividir en conjuntos de entrenamiento (80%) y prueba (20%)
-    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    # Dividir en conjuntos de entrenamiento (70%) y prueba (30%)
+    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
     modelo = None
     imagenes = []
     # Definir los modelos
@@ -232,7 +242,7 @@ def imagenesModelo(df, target, metodo, nombre,):
 
     if roc_auc is not None:
         Imports.plt.figure(figsize=(8, 6))
-        Imports.plt.plot(fpr, tpr, color='blue', label=f'ROC curve (area = {roc_auc:.4f}')
+        Imports.plt.plot(fpr, tpr, color='blue', label=f'ROC curve (area = {roc_auc:.6f})')
         Imports.plt.plot([0, 1], [0, 1], color='gray', linestyle='--')
         Imports.plt.xlim([0.0, 1.0])
         Imports.plt.ylim([0.0, 1.05])

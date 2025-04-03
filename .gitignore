@@ -29,6 +29,7 @@ Thumbs.db
 # Archivos de pruebas
 coverage/
 htmlcov/
+static/uploads
 *.cover
 *.py,cover
 
