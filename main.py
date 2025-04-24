@@ -1,5 +1,5 @@
 from imports import Imports
-from flask import Flask, request, Response, make_response, redirect, render_template, url_for, flash, jsonify, send_from_directory
+from flask import Flask, request, send_file, redirect, render_template, flash, jsonify, send_from_directory
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 
@@ -7,7 +7,7 @@ from model_trainer import ModelTrainer
 from Metodos.identificacion_variables import identificar_variables, revisar_codificacion_categoricas
 from Metodos.valores_atipicos import graficar_valores_atipicos, estandarizar_tipos, tratar_valores_atipicos, evaluar_valores_vacios
 from Metodos.imputacion import imputar_xgboost,imputar_random_forest, imputar_knn_regresion, imputar_knn, imputar_regresion, imputar_mediana, imputar_moda, imputar_categoricas_simple, imputar_categoricas_random_forest, graficar_distribuciones, evaluar_calidad_imputacion
-from Metodos.balanceo import apply_smote, apply_smote_borderline, apply_smote_nc, apply_random_under_sampling, calculate_mir, calculate_lrid, medir_desbalance, balancear_datasets, entrenar_y_evaluar_modelos, imagenesModelo, seleccionar_mejor_modelo
+from Metodos.balanceo import medir_desbalance, balancear_datasets, entrenar_y_evaluar_modelos, imagenesModelo, seleccionar_mejor_modelo, distribucion_por_columna
 
 
 app = Flask(__name__)
@@ -310,7 +310,9 @@ def visualizarEstadistica(filename):
 nombreDataset = None
 modelo = None
 imagenes = None
-
+mir = None 
+lrid = None 
+nivel = None 
 def datasetGanador():
     global mejor_metodo
     rutaGanador = None
@@ -332,7 +334,10 @@ def indexBalanceo():
     global variables_categoricas
     global variables_continuas
     global nombreDataset
-    global rutaGanador
+    global mir
+    global lrid
+    global nivel
+
     directory = datasetGanador()
     dt = Imports.pd.read_csv(directory)
     nombreDataset = Imports.os.path.splitext(Imports.os.path.basename(directory))[0]
@@ -349,12 +354,15 @@ def Balanceo():
     global variables_continuas
     global nombreDataset
     global dependiente
-    global rutaGanador
-
+    global mir
+    global lrid
+    global nivel
+    
     directory = datasetGanador()
     dt = Imports.pd.read_csv(directory)
     target = dependiente
     resultados = balancear_datasets(dt, target, variables_categoricas, variables_continuas,nombreDataset,app)
+    resultados.insert(0,['Datos crudos', mir, lrid, nivel])
     return render_template('resultadosBalanceo.html', resultados=resultados)
 
 
@@ -378,7 +386,7 @@ def Modelo():
         nombresplit + "_Borderline": Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_smote_borderline.csv')),
         nombresplit + "_NC": Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_smote_nc.csv')),
         nombresplit + "_RandomUnder": Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_random_under.csv')),
-        "base": Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],'base_test.csv')),
+        "datos_crudos": Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],'base_test.csv')),
     }
     
     for metodo, df in datasets_cargados.items():
@@ -386,10 +394,7 @@ def Modelo():
         modelo[metodo] = entrenar_y_evaluar_modelos(df, target, nombre,app)
     
     modeloSinBase = modelo.copy()
-    del modeloSinBase['base']
-    #print(modelo)
-    #print("holaaa \n")
-    #print(modeloSinBase)
+    del modeloSinBase['datos_crudos']
     mejor_metodo1, mejor_modelo, mejor_score, mensajes = seleccionar_mejor_modelo(modeloSinBase, nombresplit)
     resultado = modelo.copy()
     return render_template('resultadosModelos.html', resultados = resultado, nombresplit=nombresplit, mensajes = mensajes, ganador= mensajes.copy())
@@ -436,10 +441,10 @@ def estadisticaModelo(name):
         respuesta = resultado[nombresplit+'_NC']['KNN']
     elif(name == 'KNN-Random under-sampling'):
         respuesta = resultado[nombresplit+'_RandomUnder']['KNN']
-    elif(name == 'xgboost-base'):
-        respuesta = resultado['base']['XGBoost']
-    elif(name == 'KNN-base'):
-        respuesta = resultado['base']['KNN']
+    elif(name == 'xgboost-datos_crudos'):
+        respuesta = resultado['datos_crudos']['XGBoost']
+    elif(name == 'KNN-datos_crudos'):
+        respuesta = resultado['datos_crudos']['KNN']
 
     return respuesta    
 
@@ -467,10 +472,72 @@ def cargarCurva(name,metodo):
         respuesta = Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_smote_nc.csv'))
     elif(name == 'Random under-sampling'):
         respuesta = Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],nombreDataset + '_random_under.csv'))
-    elif(name == 'base'):
+    elif(name == 'datos_crudos'):
         respuesta = Imports.pd.read_csv(Imports.os.path.join(app.config['UPLOAD_FOLDER'],'base_test.csv'))
     return imagenesModelo(respuesta, target, metodo, name)
 
+
+@app.route('/verDistribucion/<name>')
+def verDistribucion(name):
+    if name == 'smote':
+        imagenes = [
+            "/static/uploads/Datos_crudos_proporcion.png",
+            "/static/uploads/smote_proporcion.png"
+        ]
+    elif name == 'smote_borderline':
+        imagenes = [
+            "/static/uploads/Datos_crudos_proporcion.png",
+            "/static/uploads/smote_borderline_proporcion.png"
+        ]
+    elif name == 'smote_nc':
+        imagenes = [
+            "/static/uploads/Datos_crudos_proporcion.png",
+            "/static/uploads/smote_nc_proporcion.png"
+        ]
+    elif name == 'random_under':
+        imagenes = [
+            "/static/uploads/Datos_crudos_proporcion.png",
+            "/static/uploads/random_under_proporcion.png"
+        ]
+    else:
+        imagenes = [
+            "/static/uploads/Datos_crudos_proporcion.png"
+        ]
+
+    return jsonify(imagenes)
+
+
+
+@app.route('/estadisticaModeloGanador')
+def estadisticaModeloGanador():
+    global modelo
+    global nombreDataset
+
+    copia = modelo.copy()
+    nombresplit = nombreDataset.replace("dataset_", "")
+    resultados_renombrados = {}
+
+    for metodo, modelos in copia.items():
+        # Extraer el nombre del método de balanceo
+        if metodo.lower().startswith(nombresplit+"_"):
+            metodo_balanceo = metodo.split('_', 1)[-1]
+        else:
+            metodo_balanceo = metodo
+
+        # Manejo especial para 'base'
+        metodo_balanceo_formateado = metodo_balanceo.capitalize() if metodo_balanceo != 'base' else 'Dataset Crudo'
+        if metodo_balanceo_formateado == 'Borderline':
+            metodo_balanceo_formateado = 'Smote Borderline'
+        elif  metodo_balanceo_formateado == 'Nc': 
+            metodo_balanceo_formateado = 'SmoteNC'
+        elif  metodo_balanceo_formateado == 'Randomunder': 
+            metodo_balanceo_formateado = 'Random under-sampling'
+
+        for modelo1, metricas in modelos.items():
+            clave_nueva = f"{modelo1}-{metodo_balanceo_formateado}"
+            resultados_renombrados[clave_nueva] = metricas
+
+    return jsonify(resultados_renombrados)
 
 if __name__ == '__main__':
     app.run(debug=True)

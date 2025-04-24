@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import base64
 import io
+import json
+import plotly.express as px
 
 # Scikit-learn
 from sklearn.impute import KNNImputer
@@ -46,9 +48,11 @@ class Imports:
     plt = plt
     sns = sns
     base64 = base64
+    json = json
     Counter = Counter
     ks_2samp = ks_2samp
     wasserstein_distance = wasserstein_distance
+    px = px
     
     # Módulos de scikit-learn
     KNNImputer = KNNImputer

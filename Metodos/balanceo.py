@@ -5,12 +5,15 @@ def apply_smote(X, y):
     X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.3, random_state=42)
     smote = Imports.SMOTE(random_state=42)
     X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+
     return X_train_resampled, X_test, y_train_resampled, y_test
+
 
 def apply_smote_borderline(X, y):
     X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.3, random_state=42)
     smote_borderline = Imports.BorderlineSMOTE(random_state=42, kind='borderline-1')
     X_train_resampled, y_train_resampled = smote_borderline.fit_resample(X_train, y_train)
+
     return X_train_resampled, X_test, y_train_resampled, y_test
 
 def apply_smote_nc(X, y, categorical_features):
@@ -89,7 +92,7 @@ def balancear_datasets(dataset, target, variables_categoricas, variables_continu
 
     X = dataset.drop(columns=[target])
     y = dataset[target]
-
+    graficar_proporcion_clases(y,'Datos_crudos')
     for method_name, balance_func in balance_methods.items():
 
         X_resampled, X_test, y_resampled, y_test = balance_func(X, y)
@@ -108,7 +111,7 @@ def balancear_datasets(dataset, target, variables_categoricas, variables_continu
         df_test.to_csv(test_path, index=False)
 
         mir, lrid, nivel = medir_desbalance(df_balanced, target)
-
+        graficar_proporcion_clases(df_balanced[target], method_name)
         # Almacenar resultado en la lista
         results.append([method_name, mir, lrid, nivel])
 
@@ -170,7 +173,7 @@ def entrenar_y_evaluar_modelos(df, target, nombreMetodo,app):
         resultados[nombre_modelo] = {
                     "Accuracy": accuracy,
                     "F1-score": f1,
-                    "Sensibilidad": sensibilidad,
+                    "Recall": sensibilidad,
                     "Matriz de Confusión": matriz_confusion.tolist(),
                     "MCC": mcc,
                     "AUC": roc_auc,
@@ -342,8 +345,8 @@ def seleccionar_mejor_modelo(resultados, nombresplit):
                             
                             elif auc == mejor_auc:
                                 # Paso 6: Desempate con Sensibilidad (Recall)
-                                sensibilidad = metrics['Sensibilidad']
-                                mejor_sensibilidad = resultados[mejor_metodo][mejor_modelo]['Sensibilidad']
+                                sensibilidad = metrics['Recall']
+                                mejor_sensibilidad = resultados[mejor_metodo][mejor_modelo]['Recall']
                                 
                                 if sensibilidad > mejor_sensibilidad:
                                     mejor_modelo = nombre_modelo
@@ -358,4 +361,75 @@ def seleccionar_mejor_modelo(resultados, nombresplit):
         nombremetodoganador = nombreGanador(item['metodo'], nombresplit)
         mensajes.append(item['modelo'] + "-" + nombremetodoganador)
     return mejor_metodo, modelos_empate, mejor_score,mensajes
+
+
+def distribucion_por_columna(df, nombre_dataset):
+    distribuciones = {}
+
+    for col in df.columns:
+        # Contar las instancias por clase (valor) en la columna
+        class_distribution = df[col].value_counts()
+
+        # Graficar la distribución en horizontal
+        class_distribution.plot(kind='barh', color='skyblue', edgecolor='black')
+
+        Imports.plt.title(f'Distribución de la columna "{col}" - {nombre_dataset}')
+        Imports.plt.ylabel('Clase')  # ← Las clases ahora están en el eje Y
+        Imports.plt.xlabel('Número de Instancias')  # ← Las cantidades están en el eje X
+
+        # Guardar imagen en buffer
+        img = Imports.io.BytesIO()
+        Imports.plt.savefig(img, format='png', bbox_inches="tight")
+        img.seek(0)
+
+        # Codificar en base64
+        img_base64 = Imports.base64.b64encode(img.getvalue()).decode('utf-8')
+        Imports.plt.close()
+
+        # Guardar en diccionario con el nombre de la columna
+        distribuciones[col] = img_base64
+
+    return distribuciones
+
+def graficar_proporcion_clases(y, metodo):
+    total = len(y)
+    dist = Imports.Counter(y)
+    clases = list(map(str, dist.keys()))
+    proporciones = [v / total * 100 for v in dist.values()]
+    valores = list(dist.values())
+
+    # Crear gráfica
+    Imports.plt.figure(figsize=(7, 5))
+    barras = Imports.plt.bar(clases, proporciones, color='skyblue', edgecolor='black')
+
+    Imports.plt.xlabel('Clase', fontsize=12)
+    Imports.plt.ylabel('Proporción (%)', fontsize=12)
+    Imports.plt.title(f'Proporción de Clases - {metodo}', fontsize=14, fontweight='bold')
+
+    # Ajuste de límites para evitar que el texto se corte
+    max_y = max(proporciones)
+    Imports.plt.ylim(0, max_y + 10)
+
+    # Anotaciones: valor absoluto dentro de la barra, porcentaje encima
+    for i, (bar, prop, val) in enumerate(zip(barras, proporciones, valores)):
+        altura = bar.get_height()
+
+        # Valor absoluto centrado dentro de la barra
+        Imports.plt.text(bar.get_x() + bar.get_width() / 2, altura / 2, f"{val}", 
+                         ha='center', va='center', fontsize=11, fontweight='bold', color='black')
+
+        # Porcentaje encima
+        Imports.plt.text(bar.get_x() + bar.get_width() / 2, altura + 1.5, f"{prop:.2f}%", 
+                         ha='center', va='bottom', fontsize=10, fontweight='bold', color='black')
+
+    Imports.plt.tight_layout()
+
+    # Guardar en carpeta local como PNG
+    nombre_archivo = f"{metodo}_proporcion.png"
+    ruta_completa = Imports.os.path.join('static/uploads/', nombre_archivo)
+    Imports.plt.savefig(ruta_completa, format='png', bbox_inches="tight")
+
+    Imports.plt.close()
+
+
 

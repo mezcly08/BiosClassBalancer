@@ -83,7 +83,6 @@ def imputar_knn_regresion(df, variables_continuas, k=5):
             if mse < 0.1:
                 df.loc[df[target_variable].isnull(), target_variable] = y_pred
             else:
-                print(f"MSE alto para {target_variable}: {mse}. Se usará KNNImputer en su lugar.")
                 knn_imputer = Imports.KNNImputer(n_neighbors=k)
                 df[variables_continuas] = knn_imputer.fit_transform(df[variables_continuas])
 

@@ -4,6 +4,34 @@
 {% endblock %}
 {% block title %}Resultados Balanceo{% endblock %}
 
+{% block estilos %}
+    .btn-ver-estad {
+      background-color: #007bff; /* Azul brillante */
+      color: #fff; /* Texto blanco */
+      border: none;
+      padding: 2px 12px;
+      font-size: 16px;
+      border-radius: 50px; /* Bordes redondeados */
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+      transition: all 0.3s ease;
+    }
+
+    .btn-ver-estad:hover{
+      background-color: #0056b3; /* Azul más oscuro al pasar el mouse */
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2); /* Sombra más fuerte */
+      transform: translateY(-2px); /* Efecto de elevar el botón */
+    }
+
+    .btn-ver-estad:active {
+      background-color: #00408d; /* Azul aún más oscuro al hacer clic */
+      transform: translateY(1px); /* Efecto de presionar el botón */
+    }
+    /* Estilo del ícono */
+    .fa-download, .fa-eye, .bi-graph-up{
+      font-size: 18px; /* Tamaño del ícono */
+    }
+{% endblock %} 
+
 {% block content %}
     <div class="mt-5 container">
         <h2 class="p-2 text-center">Resultado del balanceo de Datos del Dataset</h2>
@@ -13,8 +41,9 @@
             <strong>(SMOTE, Borderline-SMOTE, SMOTENC y Random Undersampling)</strong>, se aplicaron las métricas del MIR y LRID.
         </p>
         <p class="text-justify">
-        A continuación, se presenta una tabla que muestra el método utilizado, el valor del MIR, el LRID y el nivel de desequilibrio
-        del dataset tras el balanceo de los datos. 
+        A continuación, se presenta una tabla que resume el método utilizado, el valor del MIR, el LRID, el nivel de desequilibrio 
+        del dataset después del balanceo y la distribución de clases. En la primera fila se encuentra el <strong>dataset de Datos crudos</strong>, correspondiente 
+        al conjunto de datos que obtuvo el mejor desempeño en los métodos de imputación.
         
         </p>
         
@@ -26,6 +55,7 @@
                         <th class="text-center" style="width: 15%;">MIR</th>
                         <th class="text-center" style="width: 15%;">LRID</th>
                         <th class="text-center" style="width: 15%;">Desequilibrio</th>
+                        <th class="text-center" style="width: 15%;">Distribución clase</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -42,6 +72,11 @@
                             {% else %}
                                 <td><strong style="color: green;">{{ resultado[3] }}</strong></td>    
                             {% endif %}
+                            <td>
+                                <button type="button" class="btn-ver-estad" onclick="verDistribucion('{{ resultado[0] }}')">
+                                    <i class="bi bi-graph-up"></i> Ver
+                                </button>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -57,5 +92,89 @@
 
         
     </div>
+    
+    <!-- Modal para la gráfica -->
+    <div class="modal fade" id="graficaModal" tabindex="-1" aria-labelledby="graficaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="graficaModalLabel">Distribución de Clases</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <h6 id="textoModal" class="text-primary" style="display: none;"> Comparación del dataset crudo vs dataset balanceado</h6>
+                <!-- Carrusel -->
+                <div id="carruselAtipicos" class="carousel slide shadow-lg rounded" data-bs-ride="carousel">
+                <div class="carousel-indicators"></div>
+                <div class="carousel-inner rounded"></div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#carruselAtipicos" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carruselAtipicos" data-bs-slide="next">
+                    <span class="carousel-control-next-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                    <span class="visually-hidden">Siguiente</span>
+                </button>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+    <script>
+function verDistribucion(name) {
+    $.ajax({
+        url: "/verDistribucion/" + name,
+        type: "GET",
+        dataType: "json",
+        success: function(imagenes) {
+            let indicators = '';
+            let innerItems = '';
+
+            imagenes.forEach((src, index) => {
+                const activeClass = index === 0 ? 'active' : '';
+                indicators += `
+                    <button type="button" data-bs-target="#carruselAtipicos" data-bs-slide-to="${index}"
+                            class="${activeClass}" aria-label="Slide ${index + 1}"></button>
+                `;
+                innerItems += `
+                    <div class="carousel-item ${activeClass}">
+                        <img src="${src}" class="img-fluid rounded mx-auto d-block" alt="Distribución">
+                    </div>
+                `;
+            });
+
+            $('#carruselAtipicos .carousel-indicators').html(indicators);
+            $('#carruselAtipicos .carousel-inner').html(innerItems);
+            
+
+            if (imagenes.length > 1) {
+                $('#graficaModal .carousel-control-prev, #graficaModal .carousel-control-next, #graficaModal .carousel-indicators').show();
+                $('#textoModal').show();
+            } else {
+                $('#graficaModal .carousel-control-prev, #graficaModal .carousel-control-next, #graficaModal .carousel-indicators').hide();
+                $('#textoModal').hide();
+            }
+
+            const carruselModal = new bootstrap.Modal(document.getElementById('graficaModal'));
+            carruselModal.show();
+        },
+        error: function() {
+            alert("Error al cargar las imágenes.");
+        }
+    });
+}
+</script>
+
+
+
+
+
+
 
 {% endblock %}
