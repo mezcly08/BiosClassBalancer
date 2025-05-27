@@ -134,8 +134,8 @@ def entrenar_y_evaluar_modelos(df, target, nombreMetodo,app):
     X = df.drop(columns=[target])
     y = df[target]
 
-    # Dividir en conjuntos de entrenamiento (70%) y prueba (30%)
-    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+    # Dividir en conjuntos de entrenamiento (60%) y prueba (40%)
+    X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.4, random_state=42, stratify=y)
 
     # Definir los modelos
     modelos = {
@@ -180,6 +180,7 @@ def entrenar_y_evaluar_modelos(df, target, nombreMetodo,app):
                     "Balanced_accuracy_score": balanced_accuracy_score,
                     "G-mean": gmean
                 }
+        print(resultados)
         df_predicciones = X_test.copy()
         df_predicciones['True_Label'] = y_test
         df_predicciones['Predicted_Label'] = y_pred

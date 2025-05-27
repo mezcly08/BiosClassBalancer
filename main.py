@@ -89,6 +89,7 @@ def contacto():
 @app.route('/guardar_seleccion', methods=['POST'])
 def guardar_seleccion():
     global dependiente
+    global variables_continuas
     # Obtener la columna dependiente seleccionada
     dependiente = request.form['dependiente']
 
