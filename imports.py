@@ -13,7 +13,7 @@ from sklearn.impute import KNNImputer
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
-from sklearn.metrics import mean_squared_error, accuracy_score, f1_score, recall_score, confusion_matrix, matthews_corrcoef, roc_curve, auc, balanced_accuracy_score
+from sklearn.metrics import mean_squared_error, accuracy_score, f1_score, recall_score, confusion_matrix, matthews_corrcoef, roc_curve, auc, balanced_accuracy_score, ConfusionMatrixDisplay
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KNeighborsRegressor
 
@@ -70,6 +70,7 @@ class Imports:
     roc_curve = roc_curve
     auc = auc
     balanced_accuracy_score = balanced_accuracy_score
+    ConfusionMatrixDisplay = ConfusionMatrixDisplay
 
     # Módulos de Flask-WTF
     StringField = StringField

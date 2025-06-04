@@ -274,6 +274,7 @@ def visualizarDataset(filename):
 
 @app.route('/visualizarEstadistica/<filename>')
 def visualizarEstadistica(filename):
+    print(filename)
     global df
 
     if filename == 'XGBoost':

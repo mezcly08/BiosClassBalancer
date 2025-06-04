@@ -118,77 +118,137 @@ def balancear_datasets(dataset, target, variables_categoricas, variables_continu
     return results
 
 #Modelo
-def entrenar_y_evaluar_modelos(df, target, nombreMetodo,app):
+def entrenar_y_evaluar_modelos(df, target, nombreMetodo, app):
     """
     Entrena modelos de XGBoost y KNN en el dataset dado y calcula métricas de evaluación.
 
     Args:
         df (DataFrame): Dataset balanceado.
         target (str): Nombre de la variable objetivo.
-        metodo (str): Nombre del método de balanceo aplicado.
+        nombreMetodo (str): Nombre del método de balanceo aplicado.
+        app: Instancia de Flask para guardar imágenes y archivos.
 
     Returns:
         dict: Métricas de evaluación para cada modelo.
     """
-    # Separar variables predictoras (X) y la variable objetivo (y)
+    # Separar características y etiqueta
     X = df.drop(columns=[target])
     y = df[target]
 
-    # Dividir en conjuntos de entrenamiento (60%) y prueba (40%)
+    # Verificar si la variable objetivo contiene texto y convertirla si es necesario
+    if y.dtype == object or isinstance(y.iloc[0], str):
+        le = Imports.OrdinalEncoder()
+        y = le.fit_transform(y.values.reshape(-1, 1)).astype(int)
+
+    # Dividir datos
     X_train, X_test, y_train, y_test = Imports.train_test_split(X, y, test_size=0.4, random_state=42, stratify=y)
 
-    # Definir los modelos
+    # Determinar número de clases
+    num_clases = len(Imports.np.unique(y))
+    es_multiclase = num_clases > 2
+
+    # Definir modelos
     modelos = {
-        "XGBoost": Imports.XGBClassifier(n_estimators=100, eval_metric='logloss', random_state=42),
+        "XGBoost": Imports.XGBClassifier(
+            n_estimators=100,
+            objective='multi:softmax' if es_multiclase else 'binary:logistic',
+            num_class=num_clases if es_multiclase else None,
+            eval_metric='mlogloss' if es_multiclase else 'logloss',
+            random_state=42
+        ),
         "KNN": Imports.KNeighborsClassifier(n_neighbors=5)
     }
+
     resultados = {}
 
     for nombre_modelo, modelo in modelos.items():
         # Entrenar el modelo
         modelo.fit(X_train, y_train)
 
-        # Predecir en el conjunto de prueba
+        # Predecir
         y_pred = modelo.predict(X_test)
-        y_proba = modelo.predict_proba(X_test)[:, 1] if hasattr(modelo, "predict_proba") else None
 
-        # Calcular métricas
+        # Obtener probabilidades
+        try:
+            y_proba = modelo.predict_proba(X_test)
+        except AttributeError:
+            y_proba = None
+
+        # Matriz de confusión
+        cm = Imports.confusion_matrix(y_test, y_pred)
+        disp = Imports.ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=modelo.classes_)
+
+        # Graficar y guardar
+        Imports.plt.figure(figsize=(10, 5))  # Tamaño similar al de stripplot
+        disp.plot(cmap=Imports.plt.cm.Blues, colorbar=True)
+
+        # Quitar la cuadrícula
+        disp.ax_.grid(False)
+
+        # Modificar las etiquetas y título
+        Imports.plt.title("Matriz de Confusión", fontsize=16)
+        Imports.plt.xlabel("Etiqueta Predicha", fontsize=12)
+        Imports.plt.ylabel("Etiqueta Real", fontsize=12)
+
+        # Eliminar las etiquetas del eje x para que no se vean números de las clases
+        Imports.plt.xticks(fontsize=10)
+        Imports.plt.yticks(fontsize=10)
+
+        # Guardar la imagen
+        ruta_imagen = Imports.os.path.join(
+            app.config['UPLOAD_FOLDER'],
+            f"{nombreMetodo}_{nombre_modelo}_matriz_confusion.png"
+        )
+        Imports.plt.savefig(ruta_imagen, bbox_inches='tight')
+        Imports.plt.close()
+
+        # Calcular métricas generales
         accuracy = Imports.accuracy_score(y_test, y_pred)
         f1 = Imports.f1_score(y_test, y_pred, average='weighted')
         sensibilidad = Imports.recall_score(y_test, y_pred, average='weighted')
-        matriz_confusion = Imports.confusion_matrix(y_test, y_pred)
+        matriz_confusion = cm.tolist()
         mcc = Imports.matthews_corrcoef(y_test, y_pred)
-        balanced_accuracy_score = Imports.balanced_accuracy_score(y_test, y_pred)
-        gmean = Imports.np.sqrt(Imports.recall_score(y_test, y_pred, pos_label=1) * Imports.recall_score(y_test, y_pred, pos_label=0))
+        balanced_acc = Imports.balanced_accuracy_score(y_test, y_pred)
 
-        # Curva ROC y AUC
+        # G-Mean
+        recalls = [Imports.recall_score(y_test == cls, y_pred == cls, zero_division=0)
+                   for cls in Imports.np.unique(y_test)]
+        gmean = Imports.np.prod([r for r in recalls if r > 0]) ** (1 / len(recalls)) if len(recalls) > 0 else 0
+
+        # ROC y AUC
+        roc_auc = None
         if y_proba is not None:
-            fpr, tpr, _ = Imports.roc_curve(y_test, y_proba)
-            roc_auc = Imports.auc(fpr, tpr)
-        else:
-            roc_auc = None
-            fpr = None
-            tpr = None
+            if num_clases == 2:
+                fpr, tpr, _ = Imports.roc_curve(y_test, y_proba[:, 1])
+                roc_auc = Imports.auc(fpr, tpr)
+            else:
+                roc_auc_dict = {}
+                for i, cls in enumerate(modelo.classes_):
+                    y_true_binary = (y_test == cls).astype(int)
+                    y_score_class = y_proba[:, i]
+                    fpr, tpr, _ = Imports.roc_curve(y_true_binary, y_score_class)
+                    roc_auc_dict[cls] = Imports.auc(fpr, tpr)
+                roc_auc = Imports.np.mean(list(roc_auc_dict.values()))
 
-        resultados[nombre_modelo] = {
-                    "Accuracy": accuracy,
-                    "F1-score": f1,
-                    "Recall": sensibilidad,
-                    "Matriz de Confusión": matriz_confusion.tolist(),
-                    "MCC": mcc,
-                    "AUC": roc_auc,
-                    "Balanced_accuracy_score": balanced_accuracy_score,
-                    "G-mean": gmean
-                }
-        print(resultados)
+        # Guardar predicciones
         df_predicciones = X_test.copy()
         df_predicciones['True_Label'] = y_test
         df_predicciones['Predicted_Label'] = y_pred
+        nombre_csv = Imports.os.path.join(app.config['UPLOAD_FOLDER'], f"{nombreMetodo}_{nombre_modelo}.csv")
+        df_predicciones.to_csv(nombre_csv, index=False)
 
-        # Guardar el dataset en un archivo CSV
-        nombre = Imports.os.path.join(app.config['UPLOAD_FOLDER'], nombreMetodo+'_'+ nombre_modelo +'.csv')
-        df_predicciones.to_csv(nombre, index=False)
-            
+        # Guardar resultados
+        resultados[nombre_modelo] = {
+            "Accuracy": round(accuracy, 6),
+            "F1-score": round(f1, 6),
+            "Recall": round(sensibilidad, 6),
+            "Matriz de Confusión": matriz_confusion,
+            "MCC": round(mcc, 6),
+            "AUC": round(roc_auc, 6) if roc_auc is not None else None,
+            "Balanced_accuracy_score": round(balanced_acc, 6),
+            "G-mean": round(gmean, 6)
+        }
+
     return resultados
     
 def imagenesModelo(df, target, metodo, nombre):
@@ -234,15 +294,39 @@ def imagenesModelo(df, target, metodo, nombre):
     sensibilidad = Imports.recall_score(y_test, y_pred, average='weighted')
     matriz_confusion = Imports.confusion_matrix(y_test, y_pred)
     mcc = Imports.matthews_corrcoef(y_test, y_pred)
-    gmean = Imports.np.sqrt(Imports.recall_score(y_test, y_pred, pos_label=1) * Imports.recall_score(y_test, y_pred, pos_label=0))
-    # Curva ROC y AUC
-    if y_proba is not None:
-        fpr, tpr, _ = Imports.roc_curve(y_test, y_proba)
-        roc_auc = Imports.auc(fpr, tpr)
-    else:
-        roc_auc = None
-        fpr = None
-        tpr = None
+    recalls = [Imports.recall_score(y_test == cls, y_pred == cls) for cls in Imports.np.unique(y_test)]
+    gmean = Imports.np.prod(recalls) ** (1/len(recalls))
+    # Calcular ROC y AUC (soporta binario y multiclase)
+    roc_auc = None
+    fpr = None
+    tpr = None
+
+    if y_proba is not None and hasattr(modelo, "classes_"):
+        classes = modelo.classes_
+        num_classes = len(classes)
+
+        if num_classes == 2:
+            # Caso binario: usar directamente roc_curve
+            fpr, tpr, _ = Imports.roc_curve(y_test, y_proba)
+            roc_auc = Imports.auc(fpr, tpr)
+        else:
+            # Caso multiclase: usar OvR (One-vs-Rest)
+            from sklearn.metrics import roc_curve, auc
+
+            fpr = {}
+            tpr = {}
+            roc_auc_dict = {}
+
+            for i, cls in enumerate(classes):
+                # Comparar cada clase vs resto
+                y_true_binary = (y_test == cls).astype(int)
+                y_score_class = y_proba[:, i]
+
+                fpr[cls], tpr[cls], _ = roc_curve(y_true_binary, y_score_class)
+                roc_auc_dict[cls] = auc(fpr[cls], tpr[cls])
+
+            # Opcional: promedio macro del AUC
+            roc_auc = Imports.np.mean(list(roc_auc_dict.values()))
 
     if roc_auc is not None:
         Imports.plt.figure(figsize=(8, 6))
